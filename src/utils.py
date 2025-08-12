@@ -5,7 +5,7 @@ def parse_xml_files(folder: str = "data") -> dict:
     if not os.path.isdir(folder):
         raise FileNotFoundError(f"Folder '{folder}' not found.")
 
-    parsed_files = {}
+    parsed_data  = {}
 
     for file_name in os.listdir(folder):
         file_path = os.path.join(folder, file_name)
@@ -15,10 +15,12 @@ def parse_xml_files(folder: str = "data") -> dict:
             try:
                 with open(file_path, "r", encoding="utf-8") as f:
                     xml_data = f.read()
-                    parsed_data = xmltodict.parse(xml_data)
-                    parsed_files[file_name] = parsed_data
+                    parsed = xmltodict.parse(xml_data)
+                    first_key = next(iter(parsed))
+                    parsed_data= parsed[first_key]
+                    # parsed_data = data.get("AirFareSearchResponse", {})
             except Exception as e:
-                print(f"Failed to parse '{file_name}': {e}")
+                print(f"Failed to parse : {e}")
 
-    return parsed_files
+    return parsed_data 
 

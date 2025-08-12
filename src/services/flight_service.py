@@ -1,39 +1,57 @@
 from utils import parse_xml_files
-from schemas import Flight, Itinerary, FlightResponse 
+from schemas import Flight, ServiceCharge, Pricing, Itinerary, FlightResponse 
 
-def load_flight_data(departure:str,destination:str):
+def map_flight(raw: dict) -> Flight:
+    return Flight(
+        carrier=raw["Carrier"].get("#text"),
+        carrier_id=raw["Carrier"].get("@id"),
+        flight_number=raw.get("FlightNumber"),
+        source=raw.get("Source"),
+        destination=raw.get("Destination"),
+        departure=raw.get("DepartureTimeStamp"),
+        arrival=raw.get("ArrivalTimeStamp"),
+        flight_class=raw.get("Class"),
+        stops=int(raw.get("NumberOfStops", 0)),
+        fare_basis=raw.get("FareBasis"),
+        ticket_type=raw.get("TicketType")
+    )
+
+def load_flight_data():
+
     try:
         parsed = parse_xml_files("data")
 
-        # Parse Onward Flights
-        onward_flights_raw = parsed.get("Flights", {}) \
-                                   .get("OnwardPricedItinerary", {}) \
-                                   .get("Flights", {}) \
-                                   .get("Flight", [])
+        data = parsed.get("PricedItineraries", {}) \
+                                   .get("Flights", {})
+        onward_flights = []
+        
+        for item in data:
+            onward_priced_itinerary = item.get("OnwardPricedItinerary")
+            pricing_data = item.get("Pricing")
+            raw_flights = onward_priced_itinerary["Flights"]["Flight"]
+            mapped_flights = [map_flight(f) for f in raw_flights]
 
-        if isinstance(onward_flights_raw, dict):
-            onward_flights_raw = [onward_flights_raw]
-
-        onward_flights = [
-            Flight(
-                carrier=flight.get("Carrier", {}).get("#text", ""),
-                carrier_id=flight.get("Carrier", {}).get("@id", ""),
-                flight_number=flight.get("FlightNumber"),
-                source=flight.get("Source"),
-                destination=flight.get("Destination"),
-                departure=flight.get("DepartureTimeStamp"),
-                arrival=flight.get("ArrivalTimeStamp"),
-                flight_class=flight.get("Class"),
-                stops=int(flight.get("NumberOfStops", 0)),
-                fare_basis=flight.get("FareBasis"),
-                ticket_type=flight.get("TicketType"),
+            mapped_charges = [
+                ServiceCharge(
+                    type=ch["@type"],
+                    charge_type=ch["@ChargeType"],
+                    amount=ch["#text"]
+                )
+                for ch in pricing_data["ServiceCharges"]
+            ] 
+            pricing = Pricing(
+                    currency=pricing_data["@currency"],
+                    service_charges=mapped_charges
             )
-            for flight in onward_flights_raw if flight.get("Source") == departure and flight.get("Destination") == destination
-        ]
-   
-    except FileNotFoundError:
-            print(f"File not found: {file_name}")  
-    except Exception as e:
-            print(f"Unexpected error with {file_name}: {e}")        
 
-    return parsed
+            itinerary = Itinerary(
+                    flights=mapped_flights,
+                    pricing=pricing
+            )
+            onward_flights.append(itinerary)
+   
+    except Exception as e:
+            print(f"Unexpected error: {e}")        
+
+    return onward_flights
+

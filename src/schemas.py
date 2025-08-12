@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List
 
 class Flight(BaseModel):
@@ -14,9 +14,20 @@ class Flight(BaseModel):
     fare_basis: Optional[str] 
     ticket_type: Optional[str]
 
-class Itinerary(BaseModel):
-    flights: List[Flight]
+class ServiceCharge(BaseModel):
+    type: str 
+    charge_type: str
+    amount: str
+    
+class Pricing(BaseModel):
+    currency: str
+    service_charges: List[ServiceCharge]
 
+class Itinerary(BaseModel):
+    flights: List[Flight] = Field(..., alias='Flights')
+    pricing: Pricing = Field(..., alias='Pricing')
+    class Config:
+        populate_by_name = True
 
 class FlightResponse(BaseModel):
     onward_itinerary: Optional[Itinerary]
