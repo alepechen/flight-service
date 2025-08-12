@@ -52,6 +52,5 @@ def load_flight_data():
    
     except Exception as e:
             print(f"Unexpected error: {e}")        
-
     return onward_flights
 
