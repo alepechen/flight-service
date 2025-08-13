@@ -61,3 +61,22 @@ def calculate_total_duration(itinerary):
 
     return int((end.astimezone(ZoneInfo("UTC")) - start.astimezone(ZoneInfo("UTC"))).total_seconds() / 60)
 
+def calculate_price(itinerary):
+    total=itinerary.pricing.service_charges[2].dict()['amount']
+    return total
+
+MAX_DURATION = 48 * 60  # 48 hours in minutes
+MAX_PRICE = 1000
+
+def calculate_optimal_score(itinerary):
+    duration = calculate_total_duration(itinerary)  
+    price_ticket = calculate_price(itinerary)  
+    price = float(price_ticket)           
+
+    # Normalize
+    norm_duration = min(duration / MAX_DURATION, 1.0)
+    norm_price = min(price / MAX_PRICE, 1.0)
+
+    # Combine both (equal weight)
+    score = 0.5 * norm_duration + 0.5 * norm_price
+    return score

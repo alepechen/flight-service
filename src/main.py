@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from services import flight_service
-from utils import calculate_total_duration
+from utils import calculate_total_duration, calculate_price, calculate_optimal_score
 
 app = FastAPI()
 
@@ -25,3 +25,30 @@ def get_shortest_flight():
 
     shortest = min(flights, key=calculate_total_duration)
     return shortest
+
+@app.get("/most-expensive")
+def get_expensive_flight():
+    flights = flight_service.load_flight_data()
+    if not flights:
+        raise HTTPException(status_code=404, detail="No flights available")
+
+    most_expensive = max(flights, key=calculate_price)
+    return most_expensive
+
+@app.get("/least-expensive")
+def get_expensive_flight():
+    flights = flight_service.load_flight_data()
+    if not flights:
+        raise HTTPException(status_code=404, detail="No flights available")
+
+    least_expensive = min(flights, key=calculate_price)
+    return least_expensive
+
+@app.get("/optimal-flight")
+def get_optimal_flight():
+    flights = flight_service.load_flight_data()
+    if not flights:
+        raise HTTPException(status_code=404, detail="No flights available")
+
+    optimal = min(flights, key=calculate_optimal_score)
+    return optimal
