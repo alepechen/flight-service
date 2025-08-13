@@ -30,5 +30,4 @@ class Itinerary(BaseModel):
         populate_by_name = True
 
 class FlightResponse(BaseModel):
-    onward_itinerary: Optional[Itinerary]
-    return_itinerary: Optional[Itinerary]
+    onward_itinerary: Optional[List[Itinerary]]

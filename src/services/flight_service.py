@@ -3,8 +3,8 @@ from schemas import Flight, ServiceCharge, Pricing, Itinerary, FlightResponse
 
 def map_flight(raw: dict) -> Flight:
     return Flight(
-        carrier=raw["Carrier"].get("#text"),
-        carrier_id=raw["Carrier"].get("@id"),
+        carrier=raw.get("Carrier", {}).get("#text"),
+        carrier_id=raw.get("Carrier", {}).get("@id"),
         flight_number=raw.get("FlightNumber"),
         source=raw.get("Source"),
         destination=raw.get("Destination"),
@@ -16,7 +16,7 @@ def map_flight(raw: dict) -> Flight:
         ticket_type=raw.get("TicketType")
     )
 
-def load_flight_data():
+def load_flight_data()-> FlightResponse:
 
     try:
         parsed = parse_xml_files("data")
@@ -29,6 +29,7 @@ def load_flight_data():
             onward_priced_itinerary = item.get("OnwardPricedItinerary")
             pricing_data = item.get("Pricing")
             raw_flights = onward_priced_itinerary["Flights"]["Flight"]
+            raw_flights = [f for f in raw_flights if isinstance(f, dict)]
             mapped_flights = [map_flight(f) for f in raw_flights]
 
             mapped_charges = [

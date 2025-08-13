@@ -2,6 +2,7 @@ import os
 import xmltodict
 from datetime import datetime
 from zoneinfo import ZoneInfo 
+from schemas import  Itinerary
 
 def parse_xml_files(folder: str = "data") -> dict:
     if not os.path.isdir(folder):
@@ -42,7 +43,7 @@ airport_timezones = {
     "XNB": "Asia/Dubai"
 }
 
-def parse_flight_time(time_str, airport_code):
+def parse_flight_time(time_str: str, airport_code: str) -> datetime:
     if not airport_timezones[airport_code]:
         print(f"No timezone for {airport_code}, defaulting to UTC.")
         tz = "UTC"
@@ -51,7 +52,9 @@ def parse_flight_time(time_str, airport_code):
     
     return datetime.strptime(time_str, "%Y-%m-%dT%H%M").replace(tzinfo=tz)
 
-def calculate_total_duration(itinerary):
+def calculate_total_duration(itinerary: Itinerary) -> int:
+    if not itinerary.flights:
+        return None
     first_flight = itinerary.flights[0]
     last_flight = itinerary.flights[-1]
 
@@ -60,14 +63,19 @@ def calculate_total_duration(itinerary):
 
     return int((end.astimezone(ZoneInfo("UTC")) - start.astimezone(ZoneInfo("UTC"))).total_seconds() / 60)
 
-def calculate_price(itinerary):
-    total=itinerary.pricing.service_charges[2].dict()['amount']
-    return total
+def calculate_price(itinerary: Itinerary) -> float:
+    charges = itinerary.pricing.service_charges
+    if not charges:
+        return float('inf')
+    total=charges[2].dict()['amount']
+    return float(total)
 
 MAX_DURATION = 48 * 60  # 48 hours in minutes
 MAX_PRICE = 1000
 
-def calculate_optimal_score(itinerary):
+def calculate_optimal_score(itinerary: Itinerary) -> float:
+    if not itinerary.flights:
+        return None
     duration = calculate_total_duration(itinerary)  
     price_ticket = calculate_price(itinerary)  
     price = float(price_ticket)           
